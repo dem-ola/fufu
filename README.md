@@ -1,52 +1,64 @@
+This is a game written in Oct 2019 for a coding challenge. Over the coming weeks/months/years I am, carefully, going to morph it into "something else": still a game but likely different. As such, I am not going to worry about version or release compatibilities until I get it to some stable state. 
+
+
 You are about to play a board game of battling knights.
 
-Rules and other important info further below but if you 
-just want to get on and play:
+
+Simplified rules:
+--------------------------------------------------------------
+- there are four knights on board
+- each knight has a starting attack and defence score of 1 
+- there are four free weapons
+- each weapon has its own attack and defence score
+- each knight can move around one step at a time
+- a knight that moves offboard ('drowns') leaves its weapon behind
+- any knight without a weapon finding a free weapon picks it up
+- a knight acquiring a weapon gains the weapons attack and defence scores
+- a knight can only have one weapon at a time
+- a knight cannot switch weapons
+- knights that end up on the same square will fight to the death
+- a dead knight drops dead on the spot and drops its weapon
+- winning knights, if without weapons, pick up those of dead knights, if any
+- there is no required winner: hypothetically the game can go on forever
+
+
+
+Other important info further below but if you just want to get on and play:
 
 Typical command line - flags in any combination
 --------------------------------------------------------------
-From Bboxx directory
+% python game.py            
+- runs game and includes all stdout log
+- there's a state of play output in a NumPy array
+- you can still play if you don't have NumPy 
 
-python game.py            runs game - includes all stdout log
+% python game.py -numpy     
+- don't load numpy; also will not show board game
+- in reality: game will skip numpy if not found anyway
 
-python game.py -numpy     don't load numpy
-                          also will not show board game
+% python game.py rand [n]
+- runs randmoves.py first 
+- [n] is an optional positive number of 
+- game moves: if blank, default is used
 
-python game.py rand [n]   runs randmoves.py first 
-                          [n] is an optional positive number of 
-                          game moves: if blank, default is used
-
-python                    (to start environment)
-                          >>> import game
-                          >>> game.main()
+% python
+(to start environment eg IDLE)
+>>> import game
+>>> game.main()
 
 
 Development environments
 --------------------------------------------------------------
 Use any build/run commands available:
 
-SublimeText   Tools/Build   or  Cmd+B
+SublimeText   
+Tools/Build   or  Cmd+B
 
-IDLE          >>> import os
-              >>> os.chdir('path to BBoxx directory')
-              >>> import game
-              >>> game.main()
-
-
-
-Simple rules:
---------------------------------------------------------------
-- there are four knights on board
-- there are four free weapons
-- each knight can move around one step at a time
-- a knight that moves offboard ('drowns') leaves its weapon behind
-- any knight without a weapon finding a free weapon picks it up
-- a knight can only have one weapon at a time
-- a knight cannot switch weapons
-- knights that end up on the same square will fight to the death
-- a dead knight drops its weapon
-- winning knights, if without weapons, pick up those of dead knights, if any
-- there is no required winner: hypothetically the game can go on forever
+IDLE          
+>>> import os
+>>> os.chdir('path to game directory')
+>>> import game
+>>> game.main()
 
 
 constants.py
@@ -106,7 +118,7 @@ Just run the program!
       	... command line flag -numpy
   
   load knights and weapons from constants.py
-  
+      
   step through each move in moves.txt observing rules of the game
   
   print activity to stdout ie screen or terminal
