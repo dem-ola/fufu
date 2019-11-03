@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-import sys, re, json
+import sys, re, json, random
 
 import constants as C 	# constants' namespace
 from collections import defaultdict
@@ -10,10 +10,12 @@ from itertools import dropwhile
 board 		= None	# game board
 knights 	= {}	# store players
 weapons 	= {}	# store weapons
+static_player = None
 occupied	= defaultdict(list)	# occupied squares and occupiers
 weaponised	= defaultdict(list)	# squares with free weapons
 
 numpy_ = True
+import numpy as np
 if numpy_:
 	try:
 		import numpy as np		# for array to display board
@@ -55,7 +57,8 @@ def valid_file(f):
 def create_board():
 	''' create game board and fill with blanks '''
 	global board
-	board = np.empty((8,8), dtype='object')
+	shape = C.board_shape
+	board = np.empty((shape,shape), dtype='object')
 	board[:] = ''
 
 def update_board(piece, elem, position, state):
@@ -166,9 +169,13 @@ def update_board(piece, elem, position, state):
 	if not offboard:
 		board[position] = updated.strip('/')
 
-
 class Knight():
 	''' Knights i.e. players '''
+
+	_min = C._MIN_BASE
+	_max = C._MAX_BASE
+	_static = C._STATIC_SCORE
+	_static_sq = C.static_square
 
 	def __init__(self, name, position):
 		self.alpha = name[0]
@@ -177,19 +184,31 @@ class Knight():
 		self.last_position = position
 		self.alive = True
 		self.status = 'LIVE'
-		self.attack = 1
-		self.defence = 1
 		self.weapon = None
 		self.last_weapon = None
 		self.battle_score = 0
+		self.set_score()
 
 	@staticmethod
 	def offboard(move_to):
 		''' check if new coordinates still on board '''
 		if move_to == 'null':
 			return True
-		return any(i for i in move_to if i < 0 or i > 7)
+		shape = C.board_shape - 1
+		return any(i for i in move_to if i < 0 or i > shape)
 
+	
+	def _score(_min=_min, _max=_max): 
+		return random.randrange(_min, _max + 1)
+		
+	def set_score(self):
+		if self.position == Knight._static_sq:
+			attack = defence = Knight._static
+		else:
+			attack = Knight._score()
+			defence = Knight._score()
+		self.attack = attack
+		self.defence = defence
 
 	def pick_weapon(self, the_weapons):
 		''' knight picks a weapon from square '''
@@ -271,14 +290,23 @@ class Knight():
 class Weapon():
 	''' Weapons '''
 
-	def __init__(self, name, position, attack, defence, rank):
+	_min = C._MIN_BASE
+	_max = C._MAX_BASE
+
+	def __init__(self, name, position, rank):
 		self.alpha = name[0]
 		self.name = name
 		self.position = position	# y,x tuple
-		self.attack = attack
-		self.defence = defence
 		self.rank = rank
 		self.owner = None
+		self.set_score()
+
+	def _score(_min=_min, _max=_max): 
+		return random.randrange(_min, _max + 1)
+		
+	def set_score(self):
+		self.attack = Weapon._score()
+		self.defence = Weapon._score()
 
 	def __repr__(self):
 		return self.alpha
@@ -290,15 +318,23 @@ def create_knights():
 
 def load_knights():
 	''' create knights and store them in dictionary '''
+	global static_player
 	for kn in create_knights():
 		knights[kn.alpha] = kn
 		occupied[kn.position].append(kn)
+
+		# player in static squares picks up weapon 
+		if kn.position == C.static_square:
+			wp = weapons_here(kn.position)
+			kn.pick_weapon(wp)
+			static_player = kn 
+		
 		update_board('knight', kn, kn.position, 'new')
 
 def create_weapons():
 	''' create weapons '''
-	for name, position, attack, defence, rank in C.weapons:
-		yield Weapon(name, position, attack, defence, rank)
+	for name, position, rank in C.weapons:
+		yield Weapon(name, position, rank)
 
 def load_weapons():
 	''' create weapons and store them in dictionary '''
@@ -407,6 +443,9 @@ def play():
 
 		# we only care about knights still on board
 		if k.alive:
+
+			# static player does not move
+			if k == static_player: continue
 
 			print('\n',f'{m}:',k.alpha,'->',rxn)
 			
@@ -539,9 +578,9 @@ def main():
 
 	if numpy_:
 		create_board()	# numpy array
-		
-	load_knights()	# from constants
+
 	load_weapons()	# from constants
+	load_knights()	# from constants
 	
 	print('= LOAD GAME =\n')
 	print_update()	# show start position

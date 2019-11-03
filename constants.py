@@ -8,6 +8,9 @@ _END 		= _FLAG + '-END'
 _SEP 		= ':'
 _FLAGS 		= [_START, _END]
 
+board_shape	= 13
+static_square = (6, 6)
+
 deltas		= {			
 	'N': (-1, 0),
 	'S': (1, 0),
@@ -15,20 +18,38 @@ deltas		= {
 	'W': (0, -1),
 }
 
+_MIN_BASE = 0
+_MAX_BASE = 2
+_STATIC_SCORE = 5
+
 knights		= 	(
 	# name, starting (y,x)
-	('Red', (0, 0)),
-	('Blue', (7, 0)),
-	('Green', (7, 7)),
-	('Yellow', (0, 7)),
+	('Amber', (0, 0)),
+	('Blue', (0, 4)),
+	('Cream', (0, 8)),
+	('Daffodil', (0, 12)),
+	('Ebony', (4, 12)),
+	('Fog', (6, 6)),
+	('Green', (8, 12)),
+	('Hazel', (12, 12)),
+	('Jam', (12, 8)),
+	('Kiwi', (12, 4)), 
+	('Lavender', (12, 0)),
+	('Mocha', (8, 0)),
+	('Navy', (4, 0)),
 )
 
 weapons		= (
-	# alpha, starting (y,x), attack, defence, rank
-	('Magic_Staff', (5,2), 1, 1, 3),	# MagicStaff
-	('Helmet', (5,5), 0, 1, 1),			# Helmet
-	('Dagger', (2,5), 1, 0, 2),			# Dagger
-	('Axe', (2,2), 2, 0, 4),			# Axe
+	# alpha, starting (y,x), rank
+	('Qire', (6,6), 4),
+	('Rxe', (2,2), 4),
+	('Sai', (2,6), 4),
+	('Tusket', (2,10), 4),
+	('Umbrella', (6,10), 4),
+	('Vistol', (10,10), 4),
+	('Wand', (10,6), 3),
+	('Yelmet', (10,2), 1),
+	('Zagger', (6,2), 2),
 )
 	
 _SURPRISE_SCORE = 0.5
