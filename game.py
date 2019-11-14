@@ -197,7 +197,7 @@ class Knight():
 		shape = C.board_shape - 1
 		return any(i for i in move_to if i < 0 or i > shape)
 
-	
+	@staticmethod
 	def _score(_min=_min, _max=_max): 
 		return random.randrange(_min, _max + 1)
 		
@@ -293,20 +293,24 @@ class Weapon():
 	_min = C._MIN_BASE
 	_max = C._MAX_BASE
 
-	def __init__(self, name, position, rank):
+	def __init__(self, name, position):
 		self.alpha = name[0]
 		self.name = name
 		self.position = position	# y,x tuple
-		self.rank = rank
 		self.owner = None
 		self.set_score()
 
+	@staticmethod
 	def _score(_min=_min, _max=_max): 
 		return random.randrange(_min, _max + 1)
 		
 	def set_score(self):
 		self.attack = Weapon._score()
 		self.defence = Weapon._score()
+
+	@property
+	def rank(self):
+		return self.attack * 1 + self.defence + 0.5
 
 	def __repr__(self):
 		return self.alpha
@@ -327,19 +331,20 @@ def load_knights():
 		if kn.position == C.static_square:
 			wp = weapons_here(kn.position)
 			kn.pick_weapon(wp)
-			static_player = kn 
+			static_player = kn
+			del weaponised[C.static_square]
 		
 		update_board('knight', kn, kn.position, 'new')
 
 def create_weapons():
 	''' create weapons '''
-	for name, position, rank in C.weapons:
-		yield Weapon(name, position, rank)
+	for name, position in C.weapons:
+		yield Weapon(name, position)
 
 def load_weapons():
 	''' create weapons and store them in dictionary '''
 	for wp in create_weapons():
-		weapons[wp.alpha] = wp 
+		weapons[wp.alpha] = wp
 		weaponised[wp.position].append(wp)
 		update_board('weapon', wp, wp.position, 'new')
 

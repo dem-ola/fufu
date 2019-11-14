@@ -1,16 +1,15 @@
-This is a game written in Oct 2019 for a coding challenge. Over the coming weeks/months/years I am, carefully, going to morph it into "something else": still a game but likely different. As such, I am not going to worry about version or release compatibilities until I get it to some stable state. 
+This game was originally written in Oct 2019 for a coding challenge. I am slowly morphing it into a different-ish game. As such, I am not going to worry about version or release compatibilities until I get it to some stable state. 
 
-
-You are about to play a board game of battling knights.
-
+You are about to play a board game of battling knights/players.
 
 Simplified rules:
 --------------------------------------------------------------
-- there are four knights on board
-- each knight has a starting attack and defence score of 1 
-- there are four free weapons
-- each weapon has its own attack and defence score
+- thirteen (!) knights are spaced out on a 13 x 13 square board
+- each knight has a randomly assigned starting attack and defence score
+- there are nine weapons; eight free and one already held by one knight
+- each weapon has its own randomly assigned attack and defence score
 - each knight can move around one step at a time
+- the knight starting out with a weapon cannot move 
 - a knight that moves offboard ('drowns') leaves its weapon behind
 - any knight without a weapon finding a free weapon picks it up
 - a knight acquiring a weapon gains the weapons attack and defence scores
@@ -20,7 +19,6 @@ Simplified rules:
 - a dead knight drops dead on the spot and drops its weapon
 - winning knights, if without weapons, pick up those of dead knights, if any
 - there is no required winner: hypothetically the game can go on forever
-
 
 
 Other important info further below but if you just want to get on and play:
@@ -51,9 +49,6 @@ Development environments
 --------------------------------------------------------------
 Use any build/run commands available:
 
-SublimeText   
-Tools/Build   or  Cmd+B
-
 IDLE          
 >>> import os
 >>> os.chdir('path to game directory')
@@ -68,7 +63,6 @@ You shouldn't need to touch this except you're changing
 the rules of the game
 
 - starting coordinates for knights and items/weapons
-- scoring attributes for knights and weapons eg attack, defence, rank
 - surprise attack score
 - file name with the moves - default 'moves.txt'
 - flags in moves.txt for start and end of moves list
@@ -111,7 +105,7 @@ Just run the program!
       common errors include: /n at end of file, bad spelling,
       wrong case
   
-  load a board game - this is an 8*8 NumPy array
+  load a board game - this is a 13x13 NumPy array
       this is used to visualise game moves step by step
       will skip if it can't find Numpy
       you can skip NumPy board stdout prints with 
@@ -150,15 +144,13 @@ randmoves.py
 Can be used for testing and playing around. Note that because
 knights start at edge of game board it's easy for them to go
 offboard and drown early in the game. To offset this tendency
-the algorithm accepts an input to nudge nights inwards. This is 
-not very sophisticated though.
+the algorithm accepts an input to nudge nights inwards.
 
 - set 'safe' percentage of moves for inward travel
 - set number of moves
 - writes output to whatever file is set in constants.py
   so overwrite this if you don't want to overwrite that file
 - running:
-  - from open file if eg Cmd-B in Sublime Text
   - from command-line (on it's own): python randmoves.py
   - from command line (as part of game): python game.py rand
 

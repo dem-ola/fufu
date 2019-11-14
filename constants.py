@@ -41,15 +41,15 @@ knights		= 	(
 
 weapons		= (
 	# alpha, starting (y,x), rank
-	('Qire', (6,6), 4),
-	('Rxe', (2,2), 4),
-	('Sai', (2,6), 4),
-	('Tusket', (2,10), 4),
-	('Umbrella', (6,10), 4),
-	('Vistol', (10,10), 4),
-	('Wand', (10,6), 3),
-	('Yelmet', (10,2), 1),
-	('Zagger', (6,2), 2),
+	('Qire', (6,6)),
+	('Rxe', (2,2)),
+	('Sai', (2,6)),
+	('Tusket', (2,10)),
+	('Umbrella', (6,10)),
+	('Vistol', (10,10)),
+	('Wand', (10,6)),
+	('Yelmet', (10,2)),
+	('Zagger', (6,2)),
 )
 	
 _SURPRISE_SCORE = 0.5

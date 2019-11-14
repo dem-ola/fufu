@@ -11,52 +11,66 @@ import constants as C
 import random, sys, re
 
 # get variables
-players = [k for k in C.knights]
-directions = list(C.deltas.keys())
+knights = [k for k in C.knights]
 sep = C._SEP
 
 # to avoid early drownings we'll prescribe
-# directions that take knights inwards - to safety
-# later we'll say what proportion of moves to be 'safe'
-safe_directions = {
-
-	'SE': ['S', 'E'],
-	'NE': ['N', 'E'],
-	'NW': ['N', 'W'],
-	'SW': ['S', 'W'],
-}
-
-safe = 0.5		# keep this proportion of steps 'safe'
+# directions that take players inwards - to safety
+safe = 0.7		# proportion of steps 'safe'
 def_moves = 200	# default number of game moves
+
+# we need to track each player's position as they move
+class Player():
+	def __init__(self, name, y, x):
+		self.name = name
+		self.x = x
+		self.y = y
+
+def get_players(knights):
+	players = []
+	for k in knights:
+		players.append(Player(k[0], k[1][0], k[1][1]))
+	return players
+
+players = get_players(knights)
 
 def choice(lst): return random.choice(lst)
 
-def main(moves=def_moves):
+def main(moves=def_moves, safe=safe):
+	static_y, static_x = C.static_square
+	safe_moves = int(moves * safe)
 	with open(C._FILE, 'w') as f:
 		f.write(C._START+'\n')
+
 		for i in range(moves):
 
-			player = choice(players)
-			pos = player[1]
-			rand_p = player[0][0]
-			rand_d = choice(directions)
+			# choose player and get position
+			chosen = choice(players)
+			alpha, y, x = chosen.name[0], chosen.y, chosen.x
 
-			if i < int(moves * safe):
-				d = None
-				if pos[0] < 3:
-					d = 'SE' if pos[1] < 7 else 'SW'
-				elif pos[0] > 10:
-					d = 'NE' if pos[1] < 7 else 'NW'
-				elif pos[1] < 2:
-					rand_d = 'E'
-				elif pos[1] > 10:
-					rand_d = 'W'
-				if d is not None:
-					rand_d = choice(safe_directions[d])
+			# choose an axis to move along based on position relative to static
+			diff_y, diff_x = y - static_y, x - static_x
+			chosen_axis = choice((0, 1)) # choose a random axis
+			
+			# get direction and update player position
+			go = ''
+			if chosen_axis == 0:
+				if i < safe_moves:
+					
+					go = 'S' if diff_y <= 0 else 'N'
+				else:
+					go = choice(('S', 'N'))
+				chosen.y = y + 1 if go == 'S' else y - 1
+			else:
+				if i < safe_moves:
+					
+					go = 'E' if diff_x <= 0 else 'W'
+				else:
+					 go = choice(('E', 'W'))
+				chosen.x = x + 1 if go == 'E' else x - 1
 
-			move = choice(rand_p) + sep + choice(rand_d)
+			move = alpha + sep + go
 			f.write(move+'\n')
-
 		f.write(C._END)
 
 
@@ -65,5 +79,5 @@ if __name__ == '__main__':
 	if len(args) > 1:
 		try: 	def_moves = int(args[1])
 		except:	pass
-	main(def_moves)
+	main(def_moves, safe)
 
