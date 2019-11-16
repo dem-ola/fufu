@@ -16,8 +16,8 @@ sep = C._SEP
 
 # to avoid early drownings we'll prescribe
 # directions that take players inwards - to safety
-safe = 0.7		# proportion of steps 'safe'
-def_moves = 200	# default number of game moves
+safe = 0.5		# proportion of steps 'safe'
+def_moves = 300	# default number of game moves
 
 # we need to track each player's position as they move
 class Player():
