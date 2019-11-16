@@ -427,12 +427,12 @@ def fight(challenger, defender):
 
 	return winner, loser
 
-def print_update(battle=False):
+def print_update(a_bat=None, d_bat=None, battle=False):
 
 	if battle:
 		attacker, defender, winner, loser = battle
 		print()
-		print('BATTLE!', attacker, 'attacks', defender)
+		print('BATTLE!', attacker, a_bat, 'attacks', defender, d_bat)
 		print('Winner', winner, winner.battle_score)
 		print('Loser', loser, loser.battle_score)
 		last_wp = loser.last_weapon
@@ -442,6 +442,11 @@ def print_update(battle=False):
 				print(winner, 'picks up ->', winner.weapon)
 
 	if numpy_: print(board)
+	Fs = []
+	for f in knights:
+		f_ = knights[f]
+		Fs.append((f_, f_.attack, f_.defence, f_.weapon.score if f_.weapon else 'None'))
+	print('{:12}'.format('Scores'), Fs)
 	print('{:12}'.format('Positions'), dict(occupied))
 	print('{:12}'.format('Free Weapons'), dict(weaponised))
 
@@ -500,6 +505,12 @@ def play():
 			# no further action except if two knights meet
 			# since two's a crowd, they fight
 			if pre_occupied:
+
+				# get scores before battle
+				a_bat = (k.attack, k.defence, k.weapon.score if k.weapon else 'None')
+				d_bat = (occupier.attack, occupier.defence, occupier.weapon.score if occupier.weapon else 'None')
+				
+				# fight
 				winner, loser = fight(k, occupier)	
 
 				# add loser's weapon (if any) back to free list in dict
@@ -521,7 +532,7 @@ def play():
 				update_board('knight', loser, loser.position, 'dead')
 				update_board('knight', winner, winner.position, 'old')
 				update_board('knight', winner, winner.position, 'new')
-				print_update((k,occupier,winner,loser))
+				print_update(a_bat, d_bat, battle=(k, occupier, winner, loser))
 								
 class GameEncoder(json.JSONEncoder):
 	''' custom JSON encoder to output each record on single line
