@@ -1,13 +1,13 @@
-This game was originally written in Oct 2019 for a coding challenge. I am slowly morphing it into a different-ish game. As such, I am not going to worry about version or release compatibilities until I get it to some stable state. 
+This game was inspired by a coding challenge. I am slowly morphing it into a different-ish game. As such, I am not going to worry about version or release compatibilities until I get it to some stable state. 
 
 You are about to play a board game of battling knights/players.
 
 Simplified rules:
 --------------------------------------------------------------
 - thirteen (!) knights are spaced out on a 13 x 13 square board
-- each knight has a randomly assigned starting attack and defence score
+- each knight has a randomly assigned starting attack and defence skill score
 - there are nine weapons; eight free and one already held by one knight
-- each weapon has its own randomly assigned attack and defence score
+- each weapon has its own randomly assigned score
 - each knight can move around one step at a time
 - the knight starting out with a weapon cannot move 
 - a knight that moves offboard ('drowns') leaves its weapon behind
@@ -18,6 +18,7 @@ Simplified rules:
 - knights that end up on the same square will fight to the death
 - a dead knight drops dead on the spot and drops its weapon
 - winning knights, if without weapons, pick up those of dead knights, if any
+- winning knights win a bonus
 - there is no required winner: hypothetically the game can go on forever
 
 
@@ -45,17 +46,6 @@ Typical command line - flags in any combination
 >>> game.main()
 
 
-Development environments
---------------------------------------------------------------
-Use any build/run commands available:
-
-IDLE          
->>> import os
->>> os.chdir('path to game directory')
->>> import game
->>> game.main()
-
-
 constants.py
 --------------------------------------------------------------
 ''' Non-changing variables '''
@@ -63,7 +53,6 @@ You shouldn't need to touch this except you're changing
 the rules of the game
 
 - starting coordinates for knights and items/weapons
-- surprise attack score
 - file name with the moves - default 'moves.txt'
 - flags in moves.txt for start and end of moves list
 - separator for moves (see below) - default is ':'
