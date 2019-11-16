@@ -172,9 +172,7 @@ def update_board(piece, elem, position, state):
 class Knight():
 	''' Knights i.e. players '''
 
-	_min = C._MIN_BASE
-	_max = C._MAX_BASE
-	_static = C._STATIC_SCORE
+	_static = C._STATIC_SKILL
 	_static_sq = C.static_square
 
 	def __init__(self, name, position):
@@ -186,7 +184,7 @@ class Knight():
 		self.status = 'LIVE'
 		self.weapon = None
 		self.last_weapon = None
-		self.battle_score = 0
+		self.battle_score = 0 	# for printing winner/loser
 		self.set_score()
 
 	@staticmethod
@@ -196,17 +194,16 @@ class Knight():
 			return True
 		shape = C.board_shape - 1
 		return any(i for i in move_to if i < 0 or i > shape)
-
-	@staticmethod
-	def _score(_min=_min, _max=_max): 
-		return random.randrange(_min, _max + 1)
 		
 	def set_score(self):
 		if self.position == Knight._static_sq:
-			attack = defence = Knight._static
+			attack = 0
+			defence = Knight._static
 		else:
-			attack = Knight._score()
-			defence = Knight._score()
+			attack = random.randrange(
+				C._FU_ATTACK_SKILL[0], C._FU_ATTACK_SKILL[1] + 1)
+			defence = random.randrange(
+				C._FU_DEFENCE_SKILL[0], C._FU_DEFENCE_SKILL[1] + 1)
 		self.attack = attack
 		self.defence = defence
 
@@ -221,8 +218,6 @@ class Knight():
 			the_weapons.sort(reverse=True, key=attrgetter('rank'))
 		picked = the_weapons[0]
 		self.weapon = picked
-		self.attack += picked.attack
-		self.defence += picked.defence
 
 		# update weapon attributes
 		picked.owner = self
@@ -290,9 +285,6 @@ class Knight():
 class Weapon():
 	''' Weapons '''
 
-	_min = C._MIN_BASE
-	_max = C._MAX_BASE
-
 	def __init__(self, name, position):
 		self.alpha = name[0]
 		self.name = name
@@ -300,17 +292,19 @@ class Weapon():
 		self.owner = None
 		self.set_score()
 
-	@staticmethod
-	def _score(_min=_min, _max=_max): 
-		return random.randrange(_min, _max + 1)
-		
-	def set_score(self):
-		self.attack = Weapon._score()
-		self.defence = Weapon._score()
-
 	@property
 	def rank(self):
-		return self.attack * 1 + self.defence + 0.5
+		#plus random in case 2+ weapons with same score
+		return self.score + random.random()
+
+	def rescore(self):
+		''' after each battle we do this for the winner
+			because the weapon could be damaged or enhanced eg sharpened
+			during battle '''
+		self.set_score()
+
+	def set_score(self):
+		self.score = random.randrange(C._WP_SCORE[0], C._WP_SCORE[1] + 1)
 
 	def __repr__(self):
 		return self.alpha
@@ -400,18 +394,36 @@ def update_weaponised(weapon):
 def fight(challenger, defender):
 	''' determine fight winner based on higer score '''
 
-	c_score = challenger.attack + C._SURPRISE_SCORE
-	d_score = defender.defence
+	c_score = challenger.attack + \
+				challenger.defence * 0.5 + \
+					(challenger.weapon.score if challenger.weapon else 0)
+
+	d_score = 0
+	if defender == static_player:
+		d_score = defender.defence + defender.weapon.score
+	else:
+		d_score = defender.defence + \
+					defender.attack * 0.5 + \
+					(defender.weapon.score if defender.weapon else 0)
 
 	challenger.battle_score = c_score
 	defender.battle_score = d_score
 
+	#  declare winner/loser
+	# winners get a bonus
+	# they also get weapons rescored
+	# as weapons could be damaged/enhanced during fight
+
 	if c_score > d_score:
 		winner = challenger
+		challenger.attack += C._WIN_BONUS
+		if challenger.weapon is not None: challenger.weapon.rescore()
 		loser = defender
-	else:
+	else: # including draws - here defender considered winner
 		loser = challenger
 		winner = defender
+		defender.defence += C._WIN_BONUS
+		if defender.weapon is not None: defender.weapon.rescore()
 
 	return winner, loser
 
