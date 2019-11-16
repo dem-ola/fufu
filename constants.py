@@ -18,9 +18,11 @@ deltas		= {
 	'W': (0, -1),
 }
 
-_MIN_BASE = 0
-_MAX_BASE = 2
-_STATIC_SCORE = 5
+_FU_ATTACK_SKILL = (0, 3) 
+_FU_DEFENCE_SKILL = (0, 5)
+_WP_SCORE = (1, 2)
+_STATIC_SKILL = 5
+_WIN_BONUS = 0.5
 
 knights		= 	(
 	# name, starting (y,x)
@@ -51,8 +53,6 @@ weapons		= (
 	('Yelmet', (10,2)),
 	('Zagger', (6,2)),
 )
-	
-_SURPRISE_SCORE = 0.5
 
 players_ 	= [kn[0][0] for kn in knights]	# -> first letter
 directions	= [d for d in deltas]			# -> NEWS
