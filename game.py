@@ -311,7 +311,7 @@ class Weapon():
 
 def create_knights():
 	''' create knights '''
-	for name, position in C.knights:
+	for name, position, rgb in C.knights:
 		yield Knight(name, position)
 
 def load_knights():
