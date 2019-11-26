@@ -16,7 +16,7 @@ fus = [f for f in fus_]
 # to avoid early drownings we'll prescribe
 # directions that take players inwards - to safety
 safe = 0.7		# proportion of steps 'safe'
-def_moves = 100	# default number of game moves
+def_moves = 200	# default number of game moves
 
 # we need to track each player's position as they move
 class Player():
