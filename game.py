@@ -1,13 +1,15 @@
 #!/usr/bin/python3
 
 import sys, re, json, random
+import valid
+import board as B
 
 import constants as C 	# constants' namespace
 from collections import defaultdict
 from operator import attrgetter
 from itertools import dropwhile
 
-board 		= None	# game board
+board = None
 knights 	= {}	# store players
 weapons 	= {}	# store weapons
 static_player = None
@@ -21,45 +23,6 @@ if numpy_:
 		import numpy as np		# for array to display board
 	except:
 		numpy_ = False
-
-def valid_file(f):
-	''' checks if file is valid '''
-
-	# check game start
-	top = f.read(len(C._START))
-	top_ = top.startswith(C._START)
-
-	# check game end
-	f.seek(0,2)              		# go to end of file
-	f.seek(f.tell() - len(C._END))  # go backwards
-	end = f.read()
-	end_ = end.endswith(C._END)
-
-	# check mid sections for proper syntax
-	# we can choose not to do this and just skip invalid lines
-	# but with large game input files this could be harder to debug
-	# so we'll check all the lines upfront
-	# blank lines will be skipped
-	mid_ = True
-	f.seek(0)		# move back to top of file
-	for line in f:
-		lenn = len(line.strip())
-		if not line.startswith(C._FLAG) and lenn > 0:
-			if lenn != 3 or \
-				line[0] not in C.players_ or \
-				line[1] != C._SEP or \
-				line[2] not in C.directions:
-				mid_ = False
-				break
-
-	return all((top_, end_, mid_))
-
-def create_board():
-	''' create game board and fill with blanks '''
-	global board
-	shape = C.board_shape
-	board = np.empty((shape,shape), dtype='object')
-	board[:] = ''
 
 def update_board(piece, elem, position, state):
 	''' update board position 
@@ -345,7 +308,7 @@ def load_weapons():
 def get_moves():
 	''' get next move from file '''
 	with open(C._FILE) as f:
-		if not valid_file(f): # kill + warn if invalid file
+		if not valid.valid_file(f): # kill + warn if invalid file
 			raise Exception('Please use a valid game file')
 		else:
 			f.seek(0)
@@ -605,7 +568,8 @@ def main():
 	''' main thread - load and play '''
 
 	if numpy_:
-		create_board()	# numpy array
+		global board
+		board = B.create_board()	# numpy array
 
 	load_weapons()	# from constants
 	load_knights()	# from constants
