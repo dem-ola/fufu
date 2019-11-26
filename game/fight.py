@@ -1,4 +1,6 @@
-import constants as C 	# constants' namespace
+''' Fighting algorithm '''
+
+WIN_BONUS = 0.5
 
 def fight(challenger, defender, static_player):
 	''' determine fight winner based on higer score '''
@@ -25,13 +27,13 @@ def fight(challenger, defender, static_player):
 
 	if c_score > d_score:
 		winner = challenger
-		challenger.attack += C._WIN_BONUS
+		challenger.attack += WIN_BONUS
 		if challenger.weapon is not None: challenger.weapon.rescore()
 		loser = defender
 	else: # including draws - here defender considered winner
 		loser = challenger
 		winner = defender
-		defender.defence += C._WIN_BONUS
+		defender.defence += WIN_BONUS
 		if defender.weapon is not None: defender.weapon.rescore()
 
 	return winner, loser

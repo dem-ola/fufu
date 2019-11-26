@@ -1,5 +1,3 @@
-#!/usr/bin/python3
-
 ''' generate random moves and save to file;
 	file saved to is the default in constants.py
 	to not overwrite the default:
@@ -7,12 +5,13 @@
 		or change the constants.py default
 '''
 
-import constants as C
+from constants import move_path
 import random, sys, re
+from fus import STATIC_SQUARE, fus as fus_
+from valid import START, END, SEP
 
 # get variables
-fus = [f for f in C.fus]
-sep = C._SEP
+fus = [f for f in fus_]
 
 # to avoid early drownings we'll prescribe
 # directions that take players inwards - to safety
@@ -32,15 +31,20 @@ def get_players(fus):
 		players.append(Player(f[0], f[1][0], f[1][1]))
 	return players
 
-players = get_players(fus)
-
-def choice(lst): return random.choice(lst)
+def choice(lst): 
+	return random.choice(lst)
 
 def main(moves=def_moves, safe=safe):
-	static_y, static_x = C.static_square
+	''' derive moves '''
+
+	players = get_players(fus)
+	
+	static_y, static_x = STATIC_SQUARE
 	safe_moves = int(moves * safe)
-	with open(C._FILE, 'w') as f:
-		f.write(C._START+'\n')
+	
+	
+	with open(move_path, 'w') as f:
+		f.write(START+'\n')
 
 		for i in range(moves):
 
@@ -69,9 +73,9 @@ def main(moves=def_moves, safe=safe):
 					 go = choice(('E', 'W'))
 				chosen.x = x + 1 if go == 'E' else x - 1
 
-			move = alpha + sep + go
+			move = alpha + SEP + go
 			f.write(move+'\n')
-		f.write(C._END)
+		f.write(END)
 
 
 if __name__ == '__main__':	

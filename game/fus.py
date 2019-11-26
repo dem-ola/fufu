@@ -1,10 +1,12 @@
 import random
-import constants as C 	# constants' namespace
+from operator import attrgetter
+from board import board_shape
 
 # skill scores
 ATTACK_SKILL = (0, 3) 
 DEFENCE_SKILL = (0, 5)
 STATIC_SKILL = 5
+STATIC_SQUARE = (6, 6)
 
 fus	= 	(
 	# name, starting (y,x)
@@ -27,7 +29,7 @@ class Fu():
 	''' fus i.e. players '''
 
 	_static = STATIC_SKILL
-	_static_sq = C.static_square
+	_static_sq = STATIC_SQUARE
 
 	def __init__(self, name, position):
 		self.alpha = name[0]
@@ -46,7 +48,7 @@ class Fu():
 		''' check if new coordinates still on board '''
 		if move_to == 'null':
 			return True
-		shape = C.board_shape - 1
+		shape = board_shape - 1
 		return any(i for i in move_to if i < 0 or i > shape)
 		
 	def set_score(self):
@@ -111,7 +113,8 @@ class Fu():
 				self.position = 'null'
 				if wp is not None:
                     #FIXME: reaching outside class not allowed
-					update_weaponised(wp)
+					#update_weaponised(wp)
+					pass
 
 			# update weapon position if have weapon
 			# if not, pick a free one if available

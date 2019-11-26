@@ -1,25 +1,13 @@
 ''' constant variables '''
 
-_FILE 		= 'game/moves.txt'
+import os
 
-_FLAG 		= 'GAME'
-_START 		= _FLAG + '-START'
-_END 		= _FLAG + '-END'
-_SEP 		= ':'
-_FLAGS 		= [_START, _END]
+# current file directory
+file_dir = os.path.dirname(os.path.abspath(__file__))
+move_file = 'moves.txt'
+move_path = file_dir + '/' + move_file
 
-board_shape	= 13
-static_square = (6, 6)
-_WIN_BONUS = 0.5
-
-deltas		= {			
-	'N': (-1, 0),
-	'S': (1, 0),
-	'E': (0, 1),
-	'W': (0, -1),
-}
-directions	= [d for d in deltas]			# -> NEWS
-
+print(move_path)
 
 
 

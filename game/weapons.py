@@ -1,3 +1,5 @@
+''' Describes weapons '''
+
 import random
 
 # skill scores
@@ -5,7 +7,7 @@ MIN_SKILL = 1
 MAX_SKILL = 2
 
 weapons		= (
-	# name, starting coordinates (y,x)
+	# name, starting coordinates (y,x) <- NOT x,y
 	('Qire', (6,6)),
 	('Rxe', (2,2)),
 	('Sai', (2,6)),
@@ -26,11 +28,6 @@ class Weapon():
 		self.position = position	# y,x tuple
 		self.owner = None
 		self.set_score()
-
-	@property
-	def rank(self):
-		#plus random in case 2+ weapons with same score
-		return self.score + random.random()
 
 	def rescore(self):
 		''' after each battle we do this for the winner

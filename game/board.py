@@ -1,8 +1,9 @@
 import re
-import constants as C 	# constants' namespace
 import numpy as np
 
-def create_board(shape):
+board_shape	= 13
+
+def create_board(shape=board_shape):
     ''' create game board and fill with blanks '''
     board = np.empty((shape,shape), dtype='object')
     board[:] = ''
