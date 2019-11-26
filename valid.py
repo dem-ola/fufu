@@ -1,4 +1,5 @@
 import constants as C 	# constants' namespace
+from fus import fus
 
 def valid_file(f):
 	''' checks if file is valid '''
@@ -24,7 +25,7 @@ def valid_file(f):
 		lenn = len(line.strip())
 		if not line.startswith(C._FLAG) and lenn > 0:
 			if lenn != 3 or \
-				line[0] not in C.players_ or \
+				line[0] not in [name[0][0] for name in fus] or \
 				line[1] != C._SEP or \
 				line[2] not in C.directions:
 				mid_ = False

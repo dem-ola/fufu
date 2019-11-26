@@ -3,6 +3,9 @@
 import sys, re, json, random
 import valid
 from board import create_board, update_board
+from fus import Fu, fus
+from weapons import Weapon, weapons
+from encoder import GameEncoder
 
 import constants as C 	# constants' namespace
 from collections import defaultdict
@@ -10,8 +13,8 @@ from operator import attrgetter
 from itertools import dropwhile
 
 board = None
-fus 	= {}	# store players
-weapons 	= {}	# store weapons
+fu_dict		= {}	# store players
+weap_dict 	= {}	# store weapons
 static_player = None
 occupied	= defaultdict(list)	# occupied squares and occupiers
 weaponised	= defaultdict(list)	# squares with free weapons
@@ -24,287 +27,28 @@ if numpy_:
 	except:
 		numpy_ = False
 
-def update_board_(piece, elem, position, state):
-	''' update board position 
-
-		piece: 'knight' or 'weapon' string
-		elem: knight or weapon instance
-		position: (y, x) coordinates
-		state: 'old' coords, 'new' coords or 'dead' knight
-
-	'''
-
-	if not numpy_: return
-
-	global board
-
-	# check if offboard as board access error
-	# if position goes off axis south (8, _)
-	# or off axis east (_, 8)
-	offboard = True if position == 'null' else False
-	
-	# current board entry at position
-	current = None if offboard else board[position]
-
-	# leading alpha character
-	name = elem.alpha
-
-	# interim storage of string before updating position
-	updated = ''
-	
-	# empty squares
-	if current == '':
-		if piece == 'knight':
-
-			# nothing to update if dead or drowned
-			if not elem.alive:
-				name = ''
-			
-			# show name plus weapon if any
-			else:
-				wp = elem.weapon
-				if wp is not None:
-					name += '->' + wp.alpha
-				else:
-					name += '->0' # indicates no weapon held
-		
-		updated = name
-
-	# non-empty square or going offboard/drowning
-	else:
-		if piece == 'knight':
-
-			# usually two request calls are made
-			# 1. scrub from old place on board
-			# 2. write to new place on board
-
-			# scrub knight from old position 
-			if state == 'old':
-				current = re.sub(r'/?'+name+r'.*?[0,A-Z]', '', current)
-				updated = current
-			
-			# write new position linking weapon to knight
-			# remove from 'free' list any weapon picked up 
-			# don't bother writing if knight going offboard
-			else:
-				if not offboard:
-					
-					# DEAD fus stay onboard; we'll reconstruct the string
-					# scrub old, move last weapon held to front
-					# add 'x' to name as visual cue
-					if not elem.alive:
-						current = re.sub(r'/?'+name+r'.*?[0,A-Z]', '', current)
-
-						if elem.last_weapon is not None:
-							if current[0] in fus.keys():
-								# add slash if first item is a knight
-								# e.g. H/Gx->0/R->A/Bx->0
-								current = \
-									elem.last_weapon.alpha + '/' + current
-							else:
-								# first item is a weapon, skip slash
-								# e.g. MH/Gx->0/R->A/Bx->0
-								current = elem.last_weapon.alpha + current
-						name += 'x'
-
-					# for weapon links: if no weapon or dead then use '0'
-					# aiming for a format: K->W, also H/K->W/K->W
-					wp_name = elem.weapon.alpha if elem.weapon else '0'
-					
-					if wp_name != '0':
-						current = current.replace(wp_name, '').strip('/')	
-	
-					slash = '/' if len(current) > 0 else ''
-					name += '->' + wp_name
-					updated = current + slash + name
-
-		# applies if there's already a weapon on the square
-		# or if more than one weapon loaded on square
-		# or weapon thrown back by drowning knight -> A/Rx->0[drowned:G->A]
-		# add at start to align with print format
-		else:
-			if board[position][0] in fus.keys():
-				updated = name + '/' + board[position]
-			else:
-				updated = name + board[position]
-
-	# clean and update board
-	if not offboard:
-		board[position] = updated.strip('/')
-
-class Knight():
-	''' fus i.e. players '''
-
-	_static = C._STATIC_SKILL
-	_static_sq = C.static_square
-
-	def __init__(self, name, position):
-		self.alpha = name[0]
-		self.name = name
-		self.position = position
-		self.last_position = position
-		self.alive = True
-		self.status = 'LIVE'
-		self.weapon = None
-		self.last_weapon = None
-		self.battle_score = 0 	# for printing winner/loser
-		self.set_score()
-
-	@staticmethod
-	def offboard(move_to):
-		''' check if new coordinates still on board '''
-		if move_to == 'null':
-			return True
-		shape = C.board_shape - 1
-		return any(i for i in move_to if i < 0 or i > shape)
-		
-	def set_score(self):
-		if self.position == Knight._static_sq:
-			attack = 0
-			defence = Knight._static
-		else:
-			attack = random.randrange(
-				C._FU_ATTACK_SKILL[0], C._FU_ATTACK_SKILL[1] + 1)
-			defence = random.randrange(
-				C._FU_DEFENCE_SKILL[0], C._FU_DEFENCE_SKILL[1] + 1)
-		self.attack = attack
-		self.defence = defence
-
-	def pick_weapon(self, the_weapons):
-		''' knight picks a weapon from square '''
-
-		# only called when knight doesn't already have a weapon
-		# and there are weapons freely available on the square
-		# sort weapons by preference/rank and pick highest ranking
-
-		if len(the_weapons) > 1:
-			the_weapons.sort(reverse=True, key=attrgetter('rank'))
-		picked = the_weapons[0]
-		self.weapon = picked
-
-		# update weapon attributes
-		picked.owner = self
-		picked.position = self.position
-
-		return picked
-
-	def kaput(self, status):
-		''' stuff to do if drowning or dying '''
-		self.last_weapon = self.weapon
-		if self.weapon is not None: # as None cannot have .owner
-			self.weapon.owner = None
-		self.weapon = None
-		self.alive = False
-		self.status = status
-		self.attack = 0
-		self.defence = 0
-
-	def shift(self, move_to=None, avail_weapons=None):
-		''' move knight '''
-	
-		if self.alive and move_to is not None:
-
-			picked = None	# for weapon
-			
-			# record old and new positions
-			self.last_position = self.position
-			self.position = move_to
-
-			# stuff to do if drowning
-			# knight throws weapon on bank at last position
-			# thus reaches outside to update weaponised
-			if self.offboard(move_to):
-				# take before kaput - but update after when owner is None
-				wp = self.weapon
-				self.kaput('DROWNED')
-				self.position = 'null'
-				if wp is not None:
-					update_weaponised(wp)
-
-			# update weapon position if have weapon
-			# if not, pick a free one if available
-			else:
-				if self.weapon is not None:
-					self.weapon.position = move_to
-				else:
-					if avail_weapons is not None:
-						picked = self.pick_weapon(avail_weapons)
-
-			# prints
-			self_pos = 'drowns' if self.position == 'null' else self.position
-			print('moved:', self.last_position, '->', self_pos)
-			if avail_weapons is not None: print('free weapons', avail_weapons)
-			if picked is not None: print(self, 'picks ->', picked)
-
-		return self.weapon
-
-	def dying(self):
-		''' stuff to do if dying - from battle '''
-		self.kaput('DEAD')
-
-	def __repr__(self):
-		return self.alpha
-
-class Weapon():
-	''' Weapons '''
-
-	def __init__(self, name, position):
-		self.alpha = name[0]
-		self.name = name
-		self.position = position	# y,x tuple
-		self.owner = None
-		self.set_score()
-
-	@property
-	def rank(self):
-		#plus random in case 2+ weapons with same score
-		return self.score + random.random()
-
-	def rescore(self):
-		''' after each battle we do this for the winner
-			because the weapon could be damaged or enhanced eg sharpened
-			during battle '''
-		self.set_score()
-
-	def set_score(self):
-		self.score = random.randrange(C._WP_SCORE[0], C._WP_SCORE[1] + 1)
-
-	def __repr__(self):
-		return self.alpha
-
-def create_fus():
-	''' create fus '''
-	for name, position, rgb in C.fus:
-		yield Knight(name, position)
-
 def load_fus():
 	''' create fus and store them in dictionary '''
 	global static_player, board
-	for kn in create_fus():
-		fus[kn.alpha] = kn
-		occupied[kn.position].append(kn)
+	for f in (Fu(name, position) for name, position, rgb in fus):
+		fu_dict[f.alpha] = f
+		occupied[f.position].append(f)
 
 		# player in static squares picks up weapon 
-		if kn.position == C.static_square:
-			wp = weapons_here(kn.position)
-			kn.pick_weapon(wp)
-			static_player = kn
-			del weaponised[C.static_square]
-		
-		board = update_board(board, fus, 'knight', kn, kn.position, 'new')
-
-def create_weapons():
-	''' create weapons '''
-	for name, position in C.weapons:
-		yield Weapon(name, position)
+		if f.position == C.static_square:
+			wp = weapons_here(f.position)
+			f.pick_weapon(wp)
+			static_player = f
+			del weaponised[C.static_square]	
+		board = update_board(board, fu_dict, 'knight', f, f.position, 'new')
 
 def load_weapons():
 	''' create weapons and store them in dictionary '''
 	global board
-	for wp in create_weapons():
-		weapons[wp.alpha] = wp
+	for wp in (Weapon(name, position) for name, position in weapons):
+		weap_dict[wp.alpha] = wp
 		weaponised[wp.position].append(wp)
-		board = update_board(board, fus, 'weapon', wp, wp.position, 'new')
+		board = update_board(board, fu_dict, 'weapon', wp, wp.position, 'new')
 
 def get_moves():
 	''' get next move from file '''
@@ -391,29 +135,6 @@ def fight(challenger, defender):
 
 	return winner, loser
 
-def print_update(a_bat=None, d_bat=None, battle=False):
-
-	if battle:
-		attacker, defender, winner, loser = battle
-		print()
-		print('BATTLE!', attacker, a_bat, 'attacks', defender, d_bat)
-		print('Winner', winner, winner.battle_score)
-		print('Loser', loser, loser.battle_score)
-		last_wp = loser.last_weapon
-		if last_wp:
-			print(loser, 'drops weapon ->', last_wp)
-			if last_wp == winner.weapon:
-				print(winner, 'picks up ->', winner.weapon)
-
-	if numpy_: print(board)
-	Fs = []
-	for f in fus:
-		f_ = fus[f]
-		Fs.append((f_, f_.attack, f_.defence, f_.weapon.score if f_.weapon else 'None'))
-	print('{:12}'.format('Scores'), Fs)
-	print('{:12}'.format('Positions'), dict(occupied))
-	print('{:12}'.format('Free Weapons'), dict(weaponised))
-
 def play():
 	''' get down and play '''
 	
@@ -426,7 +147,7 @@ def play():
 
 		# get knight and direction
 		kn, rxn = move.split(C._SEP)
-		k = fus[kn]
+		k = fu_dict[kn]
 
 		# we only care about fus still on board
 		if k.alive:
@@ -458,13 +179,13 @@ def play():
 			# if drowning, knight throws weapon back and goes offboard
 			# we show that here, not inside the class
 			# for fus: remove from old position, add to new
-			if Knight.offboard(move_to): 
+			if Fu.offboard(move_to): 
 				last_wp = k.last_weapon
 				if last_wp is not None:
-					board = update_board(board, fus,
+					board = update_board(board, fu_dict,
 						'weapon', last_wp, last_wp.position, 'throw')
-			board = update_board(board, fus, 'knight', k, k.last_position, 'old')
-			board = update_board(board, fus,'knight', k, k.position, 'new')
+			board = update_board(board, fu_dict, 'knight', k, k.last_position, 'old')
+			board = update_board(board, fu_dict,'knight', k, k.position, 'new')
 			print_update()		
 				
 			# no further action except if two fus meet
@@ -494,63 +215,48 @@ def play():
 						update_weaponised(winner.weapon)
 				
 				# update board - will also handle weapon
-				board = update_board(board, fus, 'knight', loser, loser.position, 'dead')
-				board, update_board(board, fus, 'knight', winner, winner.position, 'old')
-				board, update_board(board, fus, 'knight', winner, winner.position, 'new')
+				board = update_board(board, fu_dict, 'knight', loser, loser.position, 'dead')
+				board, update_board(board, fu_dict, 'knight', winner, winner.position, 'old')
+				board, update_board(board, fu_dict, 'knight', winner, winner.position, 'new')
 				print_update(a_bat, d_bat, battle=(k, occupier, winner, loser))
-								
-class GameEncoder(json.JSONEncoder):
-	''' custom JSON encoder to output each record on single line
-		
-		default json output 
-		{ 
-			'a':
-				[
-					'foo',
-					'bar'
-				]
-		} 
-		when we want: 
-		{
-			'a': ['foo', 'bar']  <- all on single line
-		}
-	'''
 
-	def iterencode(self, o, _one_shot=False):
-		''' a customised implementation
-			https://github.com/python/cpython/blob/3.8/Lib/json/encoder.py
-		'''
 
-		indent_ = 0
+def print_update(a_bat=None, d_bat=None, battle=False):
 
-		for ln in super(GameEncoder, self).iterencode(o, _one_shot=_one_shot):
+	if battle:
+		attacker, defender, winner, loser = battle
+		print()
+		print('BATTLE!', attacker, a_bat, 'attacks', defender, d_bat)
+		print('Winner', winner, winner.battle_score)
+		print('Loser', loser, loser.battle_score)
+		last_wp = loser.last_weapon
+		if last_wp:
+			print(loser, 'drops weapon ->', last_wp)
+			if last_wp == winner.weapon:
+				print(winner, 'picks up ->', winner.weapon)
 
-	  		if ln.startswith('['):
-	  			indent_ += 1
-	  			ln = re.sub(r'\s*', '', ln)
+	if numpy_: print(board)
+	Fs = []
+	for f in fu_dict:
+		f_ = fu_dict[f]
+		Fs.append((f_, f_.attack, f_.defence, f_.weapon.score if f_.weapon else 'None'))
+	print('{:12}'.format('Scores'), Fs)
+	print('{:12}'.format('Positions'), dict(occupied))
+	print('{:12}'.format('Free Weapons'), dict(weaponised))
 
-	  		elif 0 < indent_:
-	  			ln = re.sub(r'\s*', '', ln)
-
-	  		if ln.endswith(']'):
-	  			indent_ -= 1
-	  		
-  			yield ln
-
-  		
 def final_state():
 	''' dump json '''
 
 	# create dictionary with fus and weapons
 	jdict = {}
 	
-	for obj in fus.values():
+	for obj in fu_dict.values():
 		item = obj.weapon
 		item = item.name.lower() if item is not None else 'null' 
 		jdict[obj.name.lower()] = \
 			[obj.position, obj.status, item, obj.attack, obj.defence] 
 	
-	for obj in weapons.values():
+	for obj in weap_dict.values():
 		obj_owner = obj.owner
 		jdict[obj.name.lower()] = \
 			[obj.position, 

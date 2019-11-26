@@ -11,7 +11,7 @@ import constants as C
 import random, sys, re
 
 # get variables
-knights = [k for k in C.knights]
+fus = [f for f in C.fus]
 sep = C._SEP
 
 # to avoid early drownings we'll prescribe
@@ -26,13 +26,13 @@ class Player():
 		self.x = x
 		self.y = y
 
-def get_players(knights):
+def get_players(fus):
 	players = []
-	for k in knights:
-		players.append(Player(k[0], k[1][0], k[1][1]))
+	for f in fus:
+		players.append(Player(f[0], f[1][0], f[1][1]))
 	return players
 
-players = get_players(knights)
+players = get_players(fus)
 
 def choice(lst): return random.choice(lst)
 
