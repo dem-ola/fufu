@@ -3,7 +3,6 @@
 import os, sys, re, json, random
 from collections import defaultdict
 from itertools import dropwhile
-
 import valid
 import constants as C 	# constants' namespace
 from board import create_board, update_board, board_shape
@@ -12,6 +11,7 @@ from weapons import Weapon, weapons
 from fuencoder import GameEncoder
 from fight import fight
 from moves import get_moves, deltas
+from outputs import print_update, final_state
 
 # current file directory
 file_dir = os.path.dirname(os.path.abspath(__file__))
@@ -45,7 +45,7 @@ def load_fus():
 			f.pick_weapon(wp)
 			static_player = f
 			del weaponised[static_square]	
-		board = update_board(board, fu_dict, 'knight', f, f.position, 'new')
+		board = update_board(board, fu_dict, 'Fu', f, f.position, 'new')
 
 def load_weapons():
 	''' create weapons and store them in dictionary '''
@@ -61,21 +61,21 @@ def weapons_here(move_to):
 	return weaps[0] if weaps else None
 
 def fus_here(move_to):
-	''' gets any still alive knight on square '''
+	''' gets any still alive Fu on square '''
 	kn = [occupied[k] for k in occupied if k == move_to]
 	if kn: #nb. this is a list in a list
 		kn = list(dropwhile(lambda k: not k.alive, kn[0]))
 	return kn[0] if kn else None
 
-def update_occupied(knight):
+def update_occupied(fu):
 	''' update dictionary tracking occupied squares '''
 	# remove entry in old position ; delete old if empty
 	# create new entry with new position
-	last_pos = knight.last_position
-	occupied[last_pos].remove(knight)
+	last_pos = fu.last_position
+	occupied[last_pos].remove(fu)
 	if not occupied[last_pos]:
 		del occupied[last_pos]
-	occupied[knight.position].append(knight)	
+	occupied[fu.position].append(fu)	
 
 def update_weaponised(weapon):
 	''' add weapon to dict if no owner else remove '''	
@@ -100,7 +100,7 @@ def play():
 		m += 1
 		pre_occupied = False
 
-		# get knight and direction
+		# get Fu and direction
 		kn, rxn = move.split(valid.SEP)
 		k = fu_dict[kn]
 
@@ -131,7 +131,7 @@ def play():
 				update_weaponised(k_weapon)
 
 			# update game board
-			# if drowning, knight throws weapon back and goes offboard
+			# if drowning, FU throws weapon back and goes offboard
 			# we show that here, not inside the class
 			# for fus: remove from old position, add to new
 			if Fu.offboard(move_to): 
@@ -139,9 +139,10 @@ def play():
 				if last_wp is not None:
 					board = update_board(board, fu_dict,
 						'weapon', last_wp, last_wp.position, 'throw')
-			board = update_board(board, fu_dict, 'knight', k, k.last_position, 'old')
-			board = update_board(board, fu_dict,'knight', k, k.position, 'new')
-			print_update()		
+			board = update_board(board, fu_dict, 'Fu', k, k.last_position, 'old')
+			board = update_board(board, fu_dict,'Fu', k, k.position, 'new')
+			print_update(board=board, fu_dict=fu_dict, weap_dict=weap_dict, 
+							occupied=occupied, weaponised=weaponised)		
 				
 			# no further action except if two fus meet
 			# since two's a crowd, they fight
@@ -160,71 +161,18 @@ def play():
 				if last_wp is not None:
 					update_weaponised(loser.last_weapon)
 
-					# rules unclear if knight with no weapon
-					# arrives on tile with no free weapons but still
-					# defeats a defending knight with weapon
-					# the dead knight drops their weapon
-					# here we'll do the obvious thing: pick the weapon
+					# if winner has no weapon then pick the weapon
 					if winner.weapon is None:
 						winner.pick_weapon([loser.last_weapon])
 						update_weaponised(winner.weapon)
 				
 				# update board - will also handle weapon
-				board = update_board(board, fu_dict, 'knight', loser, loser.position, 'dead')
-				board, update_board(board, fu_dict, 'knight', winner, winner.position, 'old')
-				board, update_board(board, fu_dict, 'knight', winner, winner.position, 'new')
-				print_update(a_bat, d_bat, battle=(k, occupier, winner, loser))
-
-
-def print_update(a_bat=None, d_bat=None, battle=False):
-
-	if battle:
-		attacker, defender, winner, loser = battle
-		print()
-		print('BATTLE!', attacker, a_bat, 'attacks', defender, d_bat)
-		print('Winner', winner, winner.battle_score)
-		print('Loser', loser, loser.battle_score)
-		last_wp = loser.last_weapon
-		if last_wp:
-			print(loser, 'drops weapon ->', last_wp)
-			if last_wp == winner.weapon:
-				print(winner, 'picks up ->', winner.weapon)
-
-	if numpy_: print(board)
-	Fs = []
-	for f in fu_dict:
-		f_ = fu_dict[f]
-		Fs.append((f_, f_.attack, f_.defence, f_.weapon.score if f_.weapon else 'None'))
-	print('{:12}'.format('Scores'), Fs)
-	print('{:12}'.format('Positions'), dict(occupied))
-	print('{:12}'.format('Free Weapons'), dict(weaponised))
-
-def final_state():
-	''' dump json '''
-
-	# create dictionary with fus and weapons
-	jdict = {}
-	
-	for obj in fu_dict.values():
-		item = obj.weapon
-		item = item.name.lower() if item is not None else 'null' 
-		jdict[obj.name.lower()] = \
-			[obj.position, obj.status, item, obj.attack, obj.defence] 
-	
-	for obj in weap_dict.values():
-		obj_owner = obj.owner
-		jdict[obj.name.lower()] = \
-			[obj.position, 
-			obj_owner.name.lower() if obj_owner is not None else False]
-
-	# create a json string to display - note: custom encoder
-	json_ = json.dumps(jdict, indent=2, cls=GameEncoder)
-	print()
-	print(json_)
-
-	# write to file - note: custom encoder
-	with open(file_dir+'/'+'final_state.json', 'w') as jf:
-		json.dump(jdict, jf, indent=2, cls=GameEncoder)
+				board = update_board(board, fu_dict, 'Fu', loser, loser.position, 'dead')
+				board, update_board(board, fu_dict, 'Fu', winner, winner.position, 'old')
+				board, update_board(board, fu_dict, 'Fu', winner, winner.position, 'new')
+				print_update(board=board, fu_dict=fu_dict, weap_dict=weap_dict, 
+							occupied=occupied, weaponised=weaponised,
+							a_bat=a_bat, d_bat=d_bat, battle=(k, occupier, winner, loser))
 
 	
 def main():
@@ -238,11 +186,14 @@ def main():
 	load_fus()	# from constants
 	
 	print('= LOAD GAME =\n')
-	print_update()	# show start position
+	print_update(board=board, fu_dict=fu_dict, weap_dict=weap_dict, 
+							occupied=occupied, weaponised=weaponised)	# show start position
 
 	play()			# play
-	final_state()	# write final state to json
+	final_state(fu_dict=fu_dict, weap_dict=weap_dict)	# write final state to json
 
+
+# --------------------------------------------------------------
 
 if __name__ == '__main__':
 	

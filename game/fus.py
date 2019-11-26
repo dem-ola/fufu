@@ -64,9 +64,9 @@ class Fu():
 		self.defence = defence
 
 	def pick_weapon(self, the_weapons):
-		''' knight picks a weapon from square '''
+		''' Fu picks a weapon from square '''
 
-		# only called when knight doesn't already have a weapon
+		# only called when Fu doesn't already have a weapon
 		# and there are weapons freely available on the square
 		# sort weapons by preference/rank and pick highest ranking
 
@@ -93,7 +93,7 @@ class Fu():
 		self.defence = 0
 
 	def shift(self, move_to=None, avail_weapons=None):
-		''' move knight '''
+		''' move Fu '''
 	
 		if self.alive and move_to is not None:
 
@@ -104,7 +104,7 @@ class Fu():
 			self.position = move_to
 
 			# stuff to do if drowning
-			# knight throws weapon on bank at last position
+			# Fu throws weapon on bank at last position
 			# thus reaches outside to update weaponised
 			if self.offboard(move_to):
 				# take before kaput - but update after when owner is None
