@@ -12,10 +12,10 @@ def create_board(shape=board_shape):
 def update_board(board, fus, piece, elem, position, state):
     ''' update board position 
 
-		piece: 'knight' or 'weapon' string
-		elem: knight or weapon instance
+		piece: 'Fu' or 'weapon' string
+		elem: fu or weapon instance
 		position: (y, x) coordinates
-		state: 'old' coords, 'new' coords or 'dead' knight
+		state: 'old' coords, 'new' coords or 'dead' Fu
 	'''
     
     # check if offboard as board access error
@@ -34,7 +34,7 @@ def update_board(board, fus, piece, elem, position, state):
 	
 	# empty squares
     if current == '':
-        if piece == 'knight':
+        if piece == 'Fu':
 
 			# nothing to update if dead or drowned
             if not elem.alive:
@@ -52,20 +52,20 @@ def update_board(board, fus, piece, elem, position, state):
 
 	# non-empty square or going offboard/drowning
     else:
-        if piece == 'knight':
+        if piece == 'Fu':
 
 			# usually two request calls are made
 			# 1. scrub from old place on board
 			# 2. write to new place on board
 
-			# scrub knight from old position 
+			# scrub Fu from old position 
             if state == 'old':
                 current = re.sub(r'/?'+name+r'.*?[0,A-Z]', '', current)
                 updated = current
 			
-			# write new position linking weapon to knight
+			# write new position linking weapon to Fu
 			# remove from 'free' list any weapon picked up 
-			# don't bother writing if knight going offboard
+			# don't bother writing if Fu going offboard
             else:
                 if not offboard:
 					
@@ -77,7 +77,7 @@ def update_board(board, fus, piece, elem, position, state):
 
                         if elem.last_weapon is not None:
                             if current[0] in fus.keys():
-								# add slash if first item is a knight
+								# add slash if first item is a Fu
 								# e.g. H/Gx->0/R->A/Bx->0
                                 current = \
 									elem.last_weapon.alpha + '/' + current
@@ -100,7 +100,7 @@ def update_board(board, fus, piece, elem, position, state):
 
 		# applies if there's already a weapon on the square
 		# or if more than one weapon loaded on square
-		# or weapon thrown back by drowning knight -> A/Rx->0[drowned:G->A]
+		# or weapon thrown back by drowning Fu -> A/Rx->0[drowned:G->A]
 		# add at start to align with print format
         else:
             if board[position][0] in fus.keys():

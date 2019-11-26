@@ -17,7 +17,6 @@ class GameEncoder(json.JSONEncoder):
 			'a': ['foo', 'bar']  <- all on single line
 		}
 	'''
-	print(100)
 
 	def iterencode(self, o, _one_shot=False):
 		''' a customised implementation '''
