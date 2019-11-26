@@ -1,0 +1,8 @@
+.DS_Store
+.vscode/
+__pycache__/
+fu_turtle.py
+fufu/
+*workspace
+scratch.py
+todo.txt
