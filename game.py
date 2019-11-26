@@ -2,7 +2,7 @@
 
 import sys, re, json, random
 import valid
-import board as B
+from board import create_board, update_board
 
 import constants as C 	# constants' namespace
 from collections import defaultdict
@@ -10,7 +10,7 @@ from operator import attrgetter
 from itertools import dropwhile
 
 board = None
-knights 	= {}	# store players
+fus 	= {}	# store players
 weapons 	= {}	# store weapons
 static_player = None
 occupied	= defaultdict(list)	# occupied squares and occupiers
@@ -24,7 +24,7 @@ if numpy_:
 	except:
 		numpy_ = False
 
-def update_board(piece, elem, position, state):
+def update_board_(piece, elem, position, state):
 	''' update board position 
 
 		piece: 'knight' or 'weapon' string
@@ -89,14 +89,14 @@ def update_board(piece, elem, position, state):
 			else:
 				if not offboard:
 					
-					# DEAD knights stay onboard; we'll reconstruct the string
+					# DEAD fus stay onboard; we'll reconstruct the string
 					# scrub old, move last weapon held to front
 					# add 'x' to name as visual cue
 					if not elem.alive:
 						current = re.sub(r'/?'+name+r'.*?[0,A-Z]', '', current)
 
 						if elem.last_weapon is not None:
-							if current[0] in knights.keys():
+							if current[0] in fus.keys():
 								# add slash if first item is a knight
 								# e.g. H/Gx->0/R->A/Bx->0
 								current = \
@@ -123,7 +123,7 @@ def update_board(piece, elem, position, state):
 		# or weapon thrown back by drowning knight -> A/Rx->0[drowned:G->A]
 		# add at start to align with print format
 		else:
-			if board[position][0] in knights.keys():
+			if board[position][0] in fus.keys():
 				updated = name + '/' + board[position]
 			else:
 				updated = name + board[position]
@@ -133,7 +133,7 @@ def update_board(piece, elem, position, state):
 		board[position] = updated.strip('/')
 
 class Knight():
-	''' Knights i.e. players '''
+	''' fus i.e. players '''
 
 	_static = C._STATIC_SKILL
 	_static_sq = C.static_square
@@ -272,16 +272,16 @@ class Weapon():
 	def __repr__(self):
 		return self.alpha
 
-def create_knights():
-	''' create knights '''
-	for name, position, rgb in C.knights:
+def create_fus():
+	''' create fus '''
+	for name, position, rgb in C.fus:
 		yield Knight(name, position)
 
-def load_knights():
-	''' create knights and store them in dictionary '''
-	global static_player
-	for kn in create_knights():
-		knights[kn.alpha] = kn
+def load_fus():
+	''' create fus and store them in dictionary '''
+	global static_player, board
+	for kn in create_fus():
+		fus[kn.alpha] = kn
 		occupied[kn.position].append(kn)
 
 		# player in static squares picks up weapon 
@@ -291,7 +291,7 @@ def load_knights():
 			static_player = kn
 			del weaponised[C.static_square]
 		
-		update_board('knight', kn, kn.position, 'new')
+		board = update_board(board, fus, 'knight', kn, kn.position, 'new')
 
 def create_weapons():
 	''' create weapons '''
@@ -300,10 +300,11 @@ def create_weapons():
 
 def load_weapons():
 	''' create weapons and store them in dictionary '''
+	global board
 	for wp in create_weapons():
 		weapons[wp.alpha] = wp
 		weaponised[wp.position].append(wp)
-		update_board('weapon', wp, wp.position, 'new')
+		board = update_board(board, fus, 'weapon', wp, wp.position, 'new')
 
 def get_moves():
 	''' get next move from file '''
@@ -324,7 +325,7 @@ def weapons_here(move_to):
 	weaps = [weaponised[w] for w in weaponised if w == move_to]
 	return weaps[0] if weaps else None
 
-def knights_here(move_to):
+def fus_here(move_to):
 	''' gets any still alive knight on square '''
 	kn = [occupied[k] for k in occupied if k == move_to]
 	if kn: #nb. this is a list in a list
@@ -406,8 +407,8 @@ def print_update(a_bat=None, d_bat=None, battle=False):
 
 	if numpy_: print(board)
 	Fs = []
-	for f in knights:
-		f_ = knights[f]
+	for f in fus:
+		f_ = fus[f]
 		Fs.append((f_, f_.attack, f_.defence, f_.weapon.score if f_.weapon else 'None'))
 	print('{:12}'.format('Scores'), Fs)
 	print('{:12}'.format('Positions'), dict(occupied))
@@ -416,6 +417,7 @@ def print_update(a_bat=None, d_bat=None, battle=False):
 def play():
 	''' get down and play '''
 	
+	global board
 	m = 0
 	for move in get_moves():
 
@@ -424,9 +426,9 @@ def play():
 
 		# get knight and direction
 		kn, rxn = move.split(C._SEP)
-		k = knights[kn]
+		k = fus[kn]
 
-		# we only care about knights still on board
+		# we only care about fus still on board
 		if k.alive:
 
 			# static player does not move
@@ -439,7 +441,7 @@ def play():
 			move_to = tuple([(i+j) for i,j in zip(k.position, delta)])
 
 			# flag if already occupied - do this before calling shift
-			occupier = knights_here(move_to)
+			occupier = fus_here(move_to)
 			if occupier is not None:
 				pre_occupied = True
 				print('occupied by',occupier)
@@ -455,17 +457,17 @@ def play():
 			# update game board
 			# if drowning, knight throws weapon back and goes offboard
 			# we show that here, not inside the class
-			# for knights: remove from old position, add to new
+			# for fus: remove from old position, add to new
 			if Knight.offboard(move_to): 
 				last_wp = k.last_weapon
 				if last_wp is not None:
-					update_board(
+					board = update_board(board, fus,
 						'weapon', last_wp, last_wp.position, 'throw')
-			update_board('knight', k, k.last_position, 'old')
-			update_board('knight', k, k.position, 'new')
+			board = update_board(board, fus, 'knight', k, k.last_position, 'old')
+			board = update_board(board, fus,'knight', k, k.position, 'new')
 			print_update()		
 				
-			# no further action except if two knights meet
+			# no further action except if two fus meet
 			# since two's a crowd, they fight
 			if pre_occupied:
 
@@ -492,9 +494,9 @@ def play():
 						update_weaponised(winner.weapon)
 				
 				# update board - will also handle weapon
-				update_board('knight', loser, loser.position, 'dead')
-				update_board('knight', winner, winner.position, 'old')
-				update_board('knight', winner, winner.position, 'new')
+				board = update_board(board, fus, 'knight', loser, loser.position, 'dead')
+				board, update_board(board, fus, 'knight', winner, winner.position, 'old')
+				board, update_board(board, fus, 'knight', winner, winner.position, 'new')
 				print_update(a_bat, d_bat, battle=(k, occupier, winner, loser))
 								
 class GameEncoder(json.JSONEncoder):
@@ -539,10 +541,10 @@ class GameEncoder(json.JSONEncoder):
 def final_state():
 	''' dump json '''
 
-	# create dictionary with knights and weapons
+	# create dictionary with fus and weapons
 	jdict = {}
 	
-	for obj in knights.values():
+	for obj in fus.values():
 		item = obj.weapon
 		item = item.name.lower() if item is not None else 'null' 
 		jdict[obj.name.lower()] = \
@@ -569,10 +571,10 @@ def main():
 
 	if numpy_:
 		global board
-		board = B.create_board()	# numpy array
+		board = create_board(C.board_shape)	# numpy array
 
 	load_weapons()	# from constants
-	load_knights()	# from constants
+	load_fus()	# from constants
 	
 	print('= LOAD GAME =\n')
 	print_update()	# show start position

@@ -24,7 +24,7 @@ _WP_SCORE = (1, 2)
 _STATIC_SKILL = 5
 _WIN_BONUS = 0.5
 
-knights		= 	(
+fus	= 	(
 	# name, starting (y,x)
 	('Amber', (0, 0), (255,191,0)),
 	('Blue', (0, 4), (0,0,255)),
@@ -54,7 +54,7 @@ weapons		= (
 	('Zagger', (6,2)),
 )
 
-players_ 	= [kn[0][0] for kn in knights]	# -> first letter
+players_ 	= [kn[0][0] for kn in fus]	# -> first letter
 directions	= [d for d in deltas]			# -> NEWS
 
 
