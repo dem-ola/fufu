@@ -1,22 +1,26 @@
 #!/usr/bin/python3
 
-import sys, re, json, random
+import os, sys, re, json, random
 from collections import defaultdict
-from operator import attrgetter
 from itertools import dropwhile
 
 import valid
 import constants as C 	# constants' namespace
-from board import create_board, update_board
-from fus import Fu, fus
+from board import create_board, update_board, board_shape
+from fus import Fu, fus, STATIC_SQUARE
 from weapons import Weapon, weapons
-from encoder import GameEncoder
+from fuencoder import GameEncoder
 from fight import fight
+from moves import get_moves, deltas
+
+# current file directory
+file_dir = os.path.dirname(os.path.abspath(__file__))
 
 board = None
 fu_dict		= {}	# store players
 weap_dict 	= {}	# store weapons
 static_player = None
+static_square = STATIC_SQUARE
 occupied	= defaultdict(list)	# occupied squares and occupiers
 weaponised	= defaultdict(list)	# squares with free weapons
 
@@ -36,11 +40,11 @@ def load_fus():
 		occupied[f.position].append(f)
 
 		# player in static squares picks up weapon 
-		if f.position == C.static_square:
+		if f.position == static_square:
 			wp = weapons_here(f.position)
 			f.pick_weapon(wp)
 			static_player = f
-			del weaponised[C.static_square]	
+			del weaponised[static_square]	
 		board = update_board(board, fu_dict, 'knight', f, f.position, 'new')
 
 def load_weapons():
@@ -50,20 +54,6 @@ def load_weapons():
 		weap_dict[wp.alpha] = wp
 		weaponised[wp.position].append(wp)
 		board = update_board(board, fu_dict, 'weapon', wp, wp.position, 'new')
-
-def get_moves():
-	''' get next move from file '''
-	with open(C._FILE) as f:
-		if not valid.valid_file(f): # kill + warn if invalid file
-			raise Exception('Please use a valid game file')
-		else:
-			f.seek(0)
-			while True:
-				line = f.readline().strip()
-				if line == C._END:	# at end of file
-					break
-				if line not in [C._START, '']: # skip first line, blanks
-					yield line
 
 def weapons_here(move_to):
 	''' gets any free weapons on a square '''
@@ -111,7 +101,7 @@ def play():
 		pre_occupied = False
 
 		# get knight and direction
-		kn, rxn = move.split(C._SEP)
+		kn, rxn = move.split(valid.SEP)
 		k = fu_dict[kn]
 
 		# we only care about fus still on board
@@ -123,7 +113,7 @@ def play():
 			print('\n',f'{m}:',k.alpha,'->',rxn)
 			
 			# figure out where to move to
-			delta = C.deltas[rxn]
+			delta = deltas[rxn]
 			move_to = tuple([(i+j) for i,j in zip(k.position, delta)])
 
 			# flag if already occupied - do this before calling shift
@@ -233,7 +223,7 @@ def final_state():
 	print(json_)
 
 	# write to file - note: custom encoder
-	with open('final_state.json', 'w') as jf:
+	with open(file_dir+'/'+'final_state.json', 'w') as jf:
 		json.dump(jdict, jf, indent=2, cls=GameEncoder)
 
 	
@@ -242,7 +232,7 @@ def main():
 
 	if numpy_:
 		global board
-		board = create_board(C.board_shape)	# numpy array
+		board = create_board(board_shape)	# numpy array
 
 	load_weapons()	# from constants
 	load_fus()	# from constants
