@@ -22,10 +22,10 @@ weapons		= (
 class Weapon():
 	''' Weapons '''
 
-	def __init__(self, name, position):
+	def __init__(self, name, grid):
 		self.alpha = name[0]
 		self.name = name
-		self.position = position	# y,x tuple
+		self.grid = grid	# y,x tuple
 		self.owner = None
 		self.set_score()
 

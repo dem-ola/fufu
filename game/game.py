@@ -19,7 +19,6 @@ file_dir = os.path.dirname(os.path.abspath(__file__))
 board = None
 fu_dict		= {}	# store players
 weap_dict 	= {}	# store weapons
-static_player = None
 static_square = STATIC_SQUARE
 occupied	= defaultdict(list)	# occupied squares and occupiers
 weaponised	= defaultdict(list)	# squares with free weapons
@@ -34,16 +33,15 @@ if numpy_:
 
 def load_fus():
 	''' create fus and store them in dictionary '''
-	global static_player, board
+	global board
 	for f in (Fu(name, position) for name, position, rgb in fus):
 		fu_dict[f.alpha] = f
 		occupied[f.position].append(f)
 
 		# player in static squares picks up weapon 
-		if f.position == static_square:
+		if f.static:
 			wp = weapons_here(f.position)
 			f.pick_weapon(wp)
-			static_player = f
 			del weaponised[static_square]	
 		board = update_board(board, fu_dict, 'Fu', f, f.position, 'new')
 
@@ -108,7 +106,7 @@ def play():
 		if k.alive:
 
 			# static player does not move
-			if k == static_player: continue
+			if k.static: continue
 
 			print('\n',f'{m}:',k.alpha,'->',rxn)
 			
@@ -153,7 +151,7 @@ def play():
 				d_bat = (occupier.attack, occupier.defence, occupier.weapon.score if occupier.weapon else 'None')
 				
 				# fight
-				winner, loser = fight(k, occupier, static_player)	
+				winner, loser = fight(k, occupier)	
 
 				# add loser's weapon (if any) back to free list in dict
 				loser.dying()
