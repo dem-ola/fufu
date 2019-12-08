@@ -2,7 +2,7 @@
 
 WIN_BONUS = 0.5
 
-def fight(challenger, defender, static_player):
+def fight(challenger, defender):
 	''' determine fight winner based on higer score '''
 
 	c_score = challenger.attack + \
@@ -10,7 +10,7 @@ def fight(challenger, defender, static_player):
 					(challenger.weapon.score if challenger.weapon else 0)
 
 	d_score = 0
-	if defender == static_player:
+	if defender.static:
 		d_score = defender.defence + defender.weapon.score
 	else:
 		d_score = defender.defence + \

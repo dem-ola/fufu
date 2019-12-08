@@ -31,17 +31,20 @@ class Fu():
 	_static = STATIC_SKILL
 	_static_sq = STATIC_SQUARE
 
-	def __init__(self, name, position):
+	def __init__(self, name, grid):
 		self.alpha = name[0]
 		self.name = name
-		self.position = position
-		self.last_position = position
+		self.grid = grid
+		self.last_position = grid
 		self.alive = True
 		self.status = 'LIVE'
 		self.weapon = None
 		self.last_weapon = None
 		self.battle_score = 0 	# for printing winner/loser
 		self.set_score()
+		self.static = False
+		if grid == self._static_sq:
+			self.static = True
 
 	@staticmethod
 	def offboard(move_to):
@@ -52,7 +55,7 @@ class Fu():
 		return any(i for i in move_to if i < 0 or i > shape)
 		
 	def set_score(self):
-		if self.position == self._static_sq:
+		if self.grid == self._static_sq:
 			attack = 0
 			defence = self._static
 		else:
@@ -77,7 +80,7 @@ class Fu():
 
 		# update weapon attributes
 		picked.owner = self
-		picked.position = self.position
+		picked.grid = self.grid
 
 		return picked
 
@@ -100,8 +103,8 @@ class Fu():
 			picked = None	# for weapon
 			
 			# record old and new positions
-			self.last_position = self.position
-			self.position = move_to
+			self.last_position = self.grid
+			self.grid = move_to
 
 			# stuff to do if drowning
 			# Fu throws weapon on bank at last position
@@ -110,7 +113,7 @@ class Fu():
 				# take before kaput - but update after when owner is None
 				wp = self.weapon
 				self.kaput('DROWNED')
-				self.position = 'null'
+				self.grid = 'null'
 				if wp is not None:
                     #FIXME: reaching outside class not allowed
 					#update_weaponised(wp)
@@ -120,13 +123,13 @@ class Fu():
 			# if not, pick a free one if available
 			else:
 				if self.weapon is not None:
-					self.weapon.position = move_to
+					self.weapon.grid = move_to
 				else:
 					if avail_weapons is not None:
 						picked = self.pick_weapon(avail_weapons)
 
 			# prints
-			self_pos = 'drowns' if self.position == 'null' else self.position
+			self_pos = 'drowns' if self.grid == 'null' else self.grid
 			print('moved:', self.last_position, '->', self_pos)
 			if avail_weapons is not None: print('free weapons', avail_weapons)
 			if picked is not None: print(self, 'picks ->', picked)
