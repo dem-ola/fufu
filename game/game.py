@@ -195,8 +195,6 @@ def bell(angle, at, df, normal_speed):
 
 def final_rites(ring, loser):
     ''' final rites for loser '''
-    # kill loser, move off and dispossess of any weapons
-    # TODO: los_y not right 
     ring.remove(loser)
     loser.alive = False
     loser.speed(6)
