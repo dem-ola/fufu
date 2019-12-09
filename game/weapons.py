@@ -22,11 +22,13 @@ weapons		= (
 class Weapon():
 	''' Weapons '''
 
-	def __init__(self, name, grid):
+	def __init__(self, name, startpos):
 		self.alpha = name[0]
 		self.name = name
-		self.grid = grid	# y,x tuple
+		self.startpos = startpos	# y,x tuple
+		self.curpos = startpos
 		self.owner = None
+		self.static = int(startpos[0]) == 0
 		self.set_score()
 
 	def rescore(self):
