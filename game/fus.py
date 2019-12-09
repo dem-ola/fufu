@@ -31,21 +31,18 @@ class Fu():
 	_static = STATIC_SKILL
 	_static_sq = STATIC_SQUARE
 
-	def __init__(self, name, grid):
+	def __init__(self, name, startpos):
 		self.alpha = name[0]
 		self.name = name
-		self.grid = grid
-		self.last_position = grid
+		self.startpos = startpos
+		self.curpos = startpos
 		self.alive = True
 		self.status = 'LIVE'
 		self.weapon = None
-		self.last_weapon = None
+		self.static = int(startpos[0]) == 0
 		self.battle_score = 0 	# for printing winner/loser
 		self.set_score()
-		self.static = False
-		if grid == self._static_sq:
-			self.static = True
-
+		
 	@staticmethod
 	def offboard(move_to):
 		''' check if new coordinates still on board '''
@@ -55,7 +52,7 @@ class Fu():
 		return any(i for i in move_to if i < 0 or i > shape)
 		
 	def set_score(self):
-		if self.grid == self._static_sq:
+		if self.startpos == self._static_sq:
 			attack = 0
 			defence = self._static
 		else:
@@ -68,11 +65,9 @@ class Fu():
 
 	def pick_weapon(self, the_weapons):
 		''' Fu picks a weapon from square '''
-
 		# only called when Fu doesn't already have a weapon
 		# and there are weapons freely available on the square
 		# sort weapons by preference/rank and pick highest ranking
-
 		if len(the_weapons) > 1:
 			the_weapons.sort(reverse=True, key=attrgetter('rank'))
 		picked = the_weapons[0]
@@ -80,13 +75,12 @@ class Fu():
 
 		# update weapon attributes
 		picked.owner = self
-		picked.grid = self.grid
+		picked.curpos = self.curpos
 
 		return picked
 
 	def kaput(self, status):
 		''' stuff to do if drowning or dying '''
-		self.last_weapon = self.weapon
 		if self.weapon is not None: # as None cannot have .owner
 			self.weapon.owner = None
 		self.weapon = None
@@ -97,48 +91,10 @@ class Fu():
 
 	def shift(self, move_to=None, avail_weapons=None):
 		''' move Fu '''
-	
-		if self.alive and move_to is not None:
-
-			picked = None	# for weapon
-			
-			# record old and new positions
-			self.last_position = self.grid
-			self.grid = move_to
-
-			# stuff to do if drowning
-			# Fu throws weapon on bank at last position
-			# thus reaches outside to update weaponised
-			if self.offboard(move_to):
-				# take before kaput - but update after when owner is None
-				wp = self.weapon
-				self.kaput('DROWNED')
-				self.grid = 'null'
-				if wp is not None:
-                    #FIXME: reaching outside class not allowed
-					#update_weaponised(wp)
-					pass
-
-			# update weapon position if have weapon
-			# if not, pick a free one if available
-			else:
-				if self.weapon is not None:
-					self.weapon.grid = move_to
-				else:
-					if avail_weapons is not None:
-						picked = self.pick_weapon(avail_weapons)
-
-			# prints
-			self_pos = 'drowns' if self.grid == 'null' else self.grid
-			print('moved:', self.last_position, '->', self_pos)
-			if avail_weapons is not None: print('free weapons', avail_weapons)
-			if picked is not None: print(self, 'picks ->', picked)
-
+		self.curpos = move_to
+		if self.weapon is not None:
+			self.weapon.curpos = move_to
 		return self.weapon
-
-	def dying(self):
-		''' stuff to do if dying - from battle '''
-		self.kaput('DEAD')
 
 	def __repr__(self):
 		return self.alpha
